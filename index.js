@@ -1,3 +1,5 @@
+console.log('Remote Log Collector started!')
+
 const FETCH_INTERVAL_MS = 10000,
 	{servers} = require('./config.json'),
 	fetch = require('node-fetch'),
@@ -47,5 +49,4 @@ async function fetchLogs() {
 	}
 }
 
-console.log('Remote Log Collector started!')
 setInterval(fetchLogs, FETCH_INTERVAL_MS);
