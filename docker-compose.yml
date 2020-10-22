@@ -8,6 +8,7 @@ services:
 #      - .:/usr/src/app
     depends_on:
       - es01
+      - es02
       - kib01
     restart: always
   es01:
