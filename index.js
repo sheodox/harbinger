@@ -12,7 +12,7 @@ for (const {name} of servers) {
 		elasticClient.indices.create({
 			index: name
 		}, (err) => {
-			!err || err.message === 'resource_already_exists_exception' ? resolve() : reject();
+			!err || err.message === 'resource_already_exists_exception' ? resolve() : reject(err);
 		});
 	}));
 }
