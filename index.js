@@ -33,7 +33,6 @@ async function fetchLogs() {
 				}
 			}).then(res => res.json());
 
-
 			// if there were any logs, push them into elasticsearch
 			if (logs.length) {
 				console.log(`Received ${logs.length} logs from ${path}`);
@@ -50,3 +49,11 @@ async function fetchLogs() {
 }
 
 setInterval(fetchLogs, FETCH_INTERVAL_MS);
+
+process.on('unhandledRejection', reason => {
+	console.log('Unhandled rejection occurred, this was probably an Elasticsearch connection issue. Restarting...');
+	console.log(reason);
+	setTimeout(() => {
+		process.exit(1);
+	}, 1000);
+})
