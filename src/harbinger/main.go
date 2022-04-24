@@ -35,7 +35,7 @@ func main() {
 }
 
 func startChecker(checker health.Checker, quit chan any) {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(time.Minute)
 	go func() {
 		for {
 			select {

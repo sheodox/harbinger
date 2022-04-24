@@ -1,6 +1,6 @@
 console.log('Harbinger: Remote Log Collector started!')
 
-const FETCH_INTERVAL_MS = 5 * 60 * 1000,
+const FETCH_INTERVAL_MS = 60 * 1000,
 	{ servers } = require('./config.json'),
 	fetch = require('node-fetch'),
 	{ Client } = require('@elastic/elasticsearch'),
