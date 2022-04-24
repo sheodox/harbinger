@@ -35,12 +35,12 @@ Harbinger is configured by a file you create at `./src/harbinger/config.json`. I
 {
   "services": [{
     "name": "My Site",
-	"endpoint": "https://example.com/health",
-	"webhook": "a discord webhook url"
+    "endpoint": "https://example.com/health",
+    "webhook": "a discord webhook url"
   }],
   "harbinger": {
-  	"name": "a name for this instance of harbinger",
-	"webhook": "a discord webhook url"
+    "name": "a name for this instance of harbinger",
+    "webhook": "a discord webhook url"
   }
 }
 ```
