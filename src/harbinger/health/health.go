@@ -3,15 +3,17 @@ package health
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/sheodox/harbinger/config"
 	"github.com/sheodox/harbinger/discord"
 )
 
 type ServiceStatus struct {
-	Service config.Service
-	Online  bool
-	discord discord.Webhook
+	Service   config.Service
+	Online    bool
+	OfflineAt time.Time
+	discord   discord.Webhook
 }
 
 type Checker struct {
@@ -23,7 +25,7 @@ func NewChecker(services []config.Service, d discord.Webhook) Checker {
 
 	for i, service := range services {
 		// assume online at first
-		serviceStatuses[i] = &ServiceStatus{service, true, discord.NewWebhook(service.Webhook)}
+		serviceStatuses[i] = &ServiceStatus{service, true, time.Now(), discord.NewWebhook(service.Webhook)}
 	}
 
 	return Checker{serviceStatuses}
@@ -41,9 +43,12 @@ func (c *Checker) Check() {
 			} else {
 				service.discord.Send(fmt.Sprintf("%v has gone offline (%v)", service.Service.Name, statusCode))
 			}
+
+			service.OfflineAt = time.Now()
 		} else if online && !service.Online {
 			// the service has recovered
-			service.discord.Send(fmt.Sprintf("%v is back online", service.Service.Name))
+			downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
+			service.discord.Send(fmt.Sprintf("%v is back online (down %v)", service.Service.Name, downtime))
 		}
 
 		service.Online = online
