@@ -10,7 +10,7 @@ services:
     networks:
       - elastic
     volumes:
-      - ./src/log-collector/:/usr/src/app
+      - ./src/log-collector/config.json:/usr/src/app/config.json
     depends_on:
       - es01
       - es02
