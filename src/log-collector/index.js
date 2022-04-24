@@ -1,4 +1,4 @@
-console.log('Remote Log Collector started!')
+console.log('Harbinger: Remote Log Collector started!')
 
 const FETCH_INTERVAL_MS = 10000,
 	{ servers } = require('./config.json'),
