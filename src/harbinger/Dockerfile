@@ -5,7 +5,7 @@ WORKDIR /go/src/app
 COPY ./go.mod go.mod
 COPY ./go.sum go.sum
 RUN go mod download
+RUN go build
 
 CMD ./harbinger
-
 
