@@ -51,7 +51,7 @@ async function fetchLogs() {
 }
 
 async function sendToHarbinger(logs) {
-	fetch("http://harbinger/logs", {
+	fetch("http://harbinger:3000/logs", {
 		method: "POST",
 		headers: {
 			'content-type': 'application/json'
