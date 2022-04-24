@@ -1,11 +1,16 @@
 version: '2.2'
 services:
-  app:
-    build: .
+  harbinger:
+    build: ./src/harbinger/
     networks:
       - elastic
-#    volumes:
-#      - .:/usr/src/app
+    restart: always
+  app:
+    build: ./src/log-collector/
+    networks:
+      - elastic
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - es01
       - es02

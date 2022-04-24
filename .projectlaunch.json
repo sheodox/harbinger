@@ -1,0 +1,5 @@
+{
+	"commands": [{
+		"cmd": "go run .", "cwd": "./src/harbinger/"
+	}]
+}
