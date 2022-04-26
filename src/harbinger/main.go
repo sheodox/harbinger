@@ -18,24 +18,26 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	harbingerWebhook := discord.NewWebhook(cfg.Harbinger.Webhook)
+	dis := discord.NewDiscord(cfg)
 
-	checker := health.NewChecker(cfg.Services, harbingerWebhook)
+	checker := health.NewChecker(cfg.Services, dis)
 
 	quit := make(chan any)
 	startChecker(checker, quit)
 
-	harbingerWebhook.Send(fmt.Sprintf("Harbinger %v started", cfg.Harbinger.Name))
+	dis.Harbinger.Send(fmt.Sprintf("Harbinger %v started", cfg.Harbinger.Name))
 
 	fmt.Println("Harbinger started")
 
-	server.StartServer(harbingerWebhook)
+	server.StartServer(cfg, dis)
 
 	<-quit
 }
 
 func startChecker(checker health.Checker, quit chan any) {
+	checker.Check()
 	ticker := time.NewTicker(time.Minute)
+
 	go func() {
 		for {
 			select {

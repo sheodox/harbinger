@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/labstack/echo/v4"
+	"github.com/sheodox/harbinger/config"
 	"github.com/sheodox/harbinger/discord"
 )
 
@@ -14,7 +15,7 @@ type LogMessage struct {
 	Timestamp string `json:"timestamp"`
 }
 
-func StartServer(d discord.Webhook) {
+func StartServer(cfg config.Config, dis discord.Discord) {
 	e := echo.New()
 
 	e.GET("/", func(c echo.Context) error {
@@ -29,7 +30,7 @@ func StartServer(d discord.Webhook) {
 		}
 
 		for _, log := range logs {
-			d.Send(fmt.Sprintf("LOG [%v %v]: %v", log.Service, log.Concern, log.Message))
+			dis.SendAsServiceByName(log.Service, fmt.Sprintf("`%v: %v`", log.Concern, log.Message))
 		}
 
 		return c.String(200, "")

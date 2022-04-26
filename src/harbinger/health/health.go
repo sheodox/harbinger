@@ -13,22 +13,22 @@ type ServiceStatus struct {
 	Service   config.Service
 	Online    bool
 	OfflineAt time.Time
-	discord   discord.Webhook
 }
 
 type Checker struct {
 	Services []*ServiceStatus
+	Discord  discord.Discord
 }
 
-func NewChecker(services []config.Service, d discord.Webhook) Checker {
+func NewChecker(services []config.Service, d discord.Discord) Checker {
 	serviceStatuses := make([]*ServiceStatus, len(services))
 
 	for i, service := range services {
 		// assume online at first
-		serviceStatuses[i] = &ServiceStatus{service, true, time.Now(), discord.NewWebhook(service.Webhook)}
+		serviceStatuses[i] = &ServiceStatus{service, true, time.Now()}
 	}
 
-	return Checker{serviceStatuses}
+	return Checker{serviceStatuses, d}
 }
 
 func (c *Checker) Check() {
@@ -39,16 +39,16 @@ func (c *Checker) Check() {
 		if !online && service.Online {
 			// the service has gone offline since we last checked
 			if err != nil {
-				service.discord.Send(fmt.Sprintf("%v has gone offline (%v)\nError: %v", service.Service.Name, statusCode, err))
+				c.Discord.SendAsService(service.Service, fmt.Sprintf(":red_circle: %v has gone offline (%v)\n`Error: %v`", service.Service.DisplayName, statusCode, err))
 			} else {
-				service.discord.Send(fmt.Sprintf("%v has gone offline (%v)", service.Service.Name, statusCode))
+				c.Discord.SendAsService(service.Service, fmt.Sprintf(":red_circle: %v has gone offline (%v)", service.Service.DisplayName, statusCode))
 			}
 
 			service.OfflineAt = time.Now()
 		} else if online && !service.Online {
 			// the service has recovered
 			downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
-			service.discord.Send(fmt.Sprintf("%v is back online (down %v)", service.Service.Name, downtime))
+			c.Discord.SendAsService(service.Service, fmt.Sprintf(":green_circle: %v is back online (down %v)", service.Service.DisplayName, downtime))
 		}
 
 		service.Online = online

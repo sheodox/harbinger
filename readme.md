@@ -34,7 +34,8 @@ Harbinger is configured by a file you create at `./src/harbinger/config.json`. I
 ```json
 {
   "services": [{
-    "name": "My Site",
+    "serviceName": "my-site",
+    "displayName": "My Site",
     "endpoint": "https://example.com/health",
     "webhook": "a discord webhook url"
   }],
@@ -45,13 +46,30 @@ Harbinger is configured by a file you create at `./src/harbinger/config.json`. I
 }
 ```
 
-It's recommended to create webhooks for each service you wish to monitor, as well has Harbinger itself so you can customize the image and name in Discord.
+It's recommended to create separate webhooks for each service you wish to monitor, as well has Harbinger itself so you can customize the image and name in Discord.
 
 Health checks call your configured endpoint every five minutes and look for a 200 status response (response body is ignored) and will notify you over Discord if a site responds with any other status code.
 
 For added monitoring it's a good idea to run separate instances of Harbinger on two machines that monitor something on each other's machine. You should monitor services from a different machine than the one the services run on so if the entire machine goes down Harbinger doesn't go down with it and you're left without monitoring.
 
+## Log message schema
+
+Log messages are generally expected to have a schema like this:
+
+```typescript
+interface LogMessage {
+    // the name of the service this originated from, should match a serviceName in the harbinger config
+    service: string;
+    // the part of the app this is from, e.g. app, http, auth, etc.
+    concern: string
+    // the actual message logged
+    message: string;
+}
+```
+
+If your log messages have a `service` string that matches a `serviceName` in the Harbinger config it will use that service's webhook to send the message, otherwise it will use the general Harbinger webhook.
+
 ## Run
 
-Run with `docker-compose -f <a docker compose file> up --build -d`. `docker-compose.do.yml` just runs Harbinger, `docker-compose.echo.yml` runs Harbinger as well as the remote log collector and the Elastic Stack.
+Run with `docker-compose -f <a docker compose file> up --build -d`. `docker-compose.harbinger.yml` just runs Harbinger, `docker-compose.all.yml` runs Harbinger as well as the remote log collector and the Elastic Stack.
 

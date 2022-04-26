@@ -3,12 +3,14 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 )
 
 type Service struct {
-	Name     string `json:"name"`
-	Endpoint string `json:"endpoint"`
-	Webhook  string `json:"webhook"`
+	DisplayName string `json:"displayName"`
+	ServiceName string `json:"serviceName"`
+	Endpoint    string `json:"endpoint"`
+	Webhook     string `json:"webhook"`
 }
 
 type Harbinger struct {
@@ -45,5 +47,39 @@ func LoadConfig() (Config, error) {
 		configLoaded = true
 	}
 
+	validateConfig(config)
+
 	return config, err
+}
+
+func validateConfig(cfg Config) {
+	validatePropertyUnique := func(propertyGetter func(Service) string, servicePropName string) {
+		unique := make(map[string]bool)
+		for _, service := range cfg.Services {
+			prop := propertyGetter(service)
+			if prop != "" {
+				unique[prop] = true
+			}
+		}
+
+		if len(unique) < len(cfg.Services) {
+			log.Fatalf("Service config invalid! Each service must have a unique %q", servicePropName)
+		}
+	}
+
+	validatePropertyUnique(func(s Service) string {
+		return s.ServiceName
+	}, "serviceName")
+
+	validatePropertyUnique(func(s Service) string {
+		return s.DisplayName
+	}, "displayName")
+
+	validatePropertyUnique(func(s Service) string {
+		return s.Endpoint
+	}, "endpoint")
+
+	validatePropertyUnique(func(s Service) string {
+		return s.Webhook
+	}, "webhook")
 }
