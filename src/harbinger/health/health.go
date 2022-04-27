@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sheodox/harbinger/config"
-	"github.com/sheodox/harbinger/discord"
 )
 
 const (
@@ -18,24 +17,32 @@ const (
 type ServiceStatus struct {
 	Service                  config.Service
 	Online                   bool
+	Alerted                  bool
 	ConsecutiveOfflineChecks int
 	OfflineAt                time.Time
 }
 
-type Checker struct {
-	Services []*ServiceStatus
-	Discord  discord.Discord
+type Notifier interface {
+	SendAsService(config.Service, string)
 }
 
-func NewChecker(services []config.Service, d discord.Discord) Checker {
+type ServiceStatusChecker func(config.Service) (bool, int, error)
+
+type Checker struct {
+	Services           []*ServiceStatus
+	Discord            Notifier
+	checkServiceStatus ServiceStatusChecker
+}
+
+func NewChecker(services []config.Service, d Notifier) Checker {
 	serviceStatuses := make([]*ServiceStatus, len(services))
 
 	for i, service := range services {
 		// assume online at first
-		serviceStatuses[i] = &ServiceStatus{service, true, 0, time.Now()}
+		serviceStatuses[i] = &ServiceStatus{Service: service, Online: true, Alerted: false, ConsecutiveOfflineChecks: 0, OfflineAt: time.Now()}
 	}
 
-	return Checker{serviceStatuses, d}
+	return Checker{serviceStatuses, d, checkServiceStatus}
 }
 
 func (c *Checker) Check() {
@@ -49,8 +56,8 @@ func (c *Checker) Check() {
 		}
 
 		if !online && service.ConsecutiveOfflineChecks == 1 {
-			// we won't report at the first sign a service is offline, but we want
-			// to know of the first time we noticed it. if the service is offline and
+			// we won't alert at the first sign a service is offline, but we want
+			// to know when we first noticed it. if the service is offline and
 			// we go on to alert about it, this lets us show a more accurate downtime
 			service.OfflineAt = time.Now()
 		} else if !online && service.ConsecutiveOfflineChecks == offlineCountThreshold {
@@ -60,10 +67,17 @@ func (c *Checker) Check() {
 			} else {
 				c.Discord.SendAsService(service.Service, fmt.Sprintf(":red_circle: %v has gone offline (%v)", service.Service.DisplayName, statusCode))
 			}
+
+			service.Alerted = true
 		} else if online && !service.Online {
-			// the service has recovered
-			downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
-			c.Discord.SendAsService(service.Service, fmt.Sprintf(":green_circle: %v is back online (down %v)", service.Service.DisplayName, downtime))
+			// only log if we've actually notified of the service being down
+			if service.Alerted {
+				// the service has recovered
+				downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
+				c.Discord.SendAsService(service.Service, fmt.Sprintf(":green_circle: %v is back online (down %v)", service.Service.DisplayName, downtime))
+			}
+
+			service.Alerted = false
 			service.ConsecutiveOfflineChecks = 0
 		}
 
@@ -71,7 +85,7 @@ func (c *Checker) Check() {
 	}
 }
 
-func (c Checker) checkServiceStatus(service config.Service) (bool, int, error) {
+func checkServiceStatus(service config.Service) (bool, int, error) {
 	resp, err := http.Get(service.Endpoint)
 
 	if err != nil {

@@ -1,5 +1,12 @@
 {
-	"commands": [{
-		"cmd": "go run .", "cwd": "./src/harbinger/"
-	}]
+	"commands": [
+		{
+			"cmd": "go run .",
+			"cwd": "./src/harbinger/"
+		},
+		{
+			"cmd": "go test -v ./...",
+			"cwd": "./src/harbinger/"
+		}
+	]
 }
