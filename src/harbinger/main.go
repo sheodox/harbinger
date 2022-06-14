@@ -23,7 +23,7 @@ func main() {
 	checker := health.NewChecker(cfg.Services, dis)
 
 	quit := make(chan any)
-	startChecker(checker, quit)
+	go startChecker(checker, quit)
 
 	dis.Harbinger.Send(fmt.Sprintf("Harbinger %v started", cfg.Harbinger.Name))
 

@@ -11,7 +11,8 @@ import (
 const (
 	// need to get at least this many sequential offline statuses in a
 	// row before considering the service down otherwise we'll cry wolf at a network blip
-	offlineCountThreshold = 2
+	OFFLINE_COUNT_THRESHOLD = 2
+	HEALTH_CHECK_TIMEOUT    = time.Second * 10
 )
 
 type ServiceStatus struct {
@@ -60,7 +61,7 @@ func (c *Checker) Check() {
 			// to know when we first noticed it. if the service is offline and
 			// we go on to alert about it, this lets us show a more accurate downtime
 			service.OfflineAt = time.Now()
-		} else if !online && service.ConsecutiveOfflineChecks == offlineCountThreshold {
+		} else if !online && service.ConsecutiveOfflineChecks == OFFLINE_COUNT_THRESHOLD {
 			// the service has gone offline since we last checked
 			if err != nil {
 				c.Discord.SendAsService(service.Service, fmt.Sprintf(":red_circle: %v has gone offline (%v)\n`Error: %v`", service.Service.DisplayName, statusCode, err))
@@ -85,8 +86,14 @@ func (c *Checker) Check() {
 	}
 }
 
+var (
+	healthCheckerClient = http.Client{
+		Timeout: HEALTH_CHECK_TIMEOUT,
+	}
+)
+
 func checkServiceStatus(service config.Service) (bool, int, error) {
-	resp, err := http.Get(service.Endpoint)
+	resp, err := healthCheckerClient.Get(service.Endpoint)
 
 	if err != nil {
 		return false, 0, err
