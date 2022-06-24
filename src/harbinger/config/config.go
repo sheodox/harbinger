@@ -82,5 +82,5 @@ func validateConfig(cfg Config) {
 
 	validatePropertyUnique(func(s Service) string {
 		return strings.Join(s.Webhooks, ",")
-	}, "webhook")
+	}, "webhooks")
 }
