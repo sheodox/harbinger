@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"strings"
 )
 
 type Service struct {
-	DisplayName string `json:"displayName"`
-	ServiceName string `json:"serviceName"`
-	Endpoint    string `json:"endpoint"`
-	Webhook     string `json:"webhook"`
+	DisplayName string   `json:"displayName"`
+	ServiceName string   `json:"serviceName"`
+	Endpoint    string   `json:"endpoint"`
+	Webhooks    []string `json:"webhooks"`
 }
 
 type Harbinger struct {
@@ -80,6 +81,6 @@ func validateConfig(cfg Config) {
 	}, "endpoint")
 
 	validatePropertyUnique(func(s Service) string {
-		return s.Webhook
+		return strings.Join(s.Webhooks, ",")
 	}, "webhook")
 }

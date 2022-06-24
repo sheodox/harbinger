@@ -16,12 +16,12 @@ const (
 )
 
 type Webhook struct {
-	url  string
+	urls []string
 	msgs chan string
 }
 
-func NewWebhook(url string) Webhook {
-	w := Webhook{url, make(chan string, 10)}
+func NewWebhook(urls []string) Webhook {
+	w := Webhook{urls, make(chan string, 10)}
 
 	go func() {
 		for {
@@ -35,23 +35,25 @@ func NewWebhook(url string) Webhook {
 					fmt.Printf("Error marshalling json for Discord message payload. msg: %q\n%v\n", msg, err)
 				}
 
-				resp, err := http.Post(w.url, "application/json", bytes.NewBuffer(payload))
+				for _, url := range w.urls {
+					resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 
-				if err != nil {
-					fmt.Println("Error encountered trying to send message")
-					w.requeue(msg)
-				} else if resp.StatusCode > 299 {
-					body, err := io.ReadAll(resp.Body)
 					if err != nil {
-						fmt.Println("Error reading body: ", err)
+						fmt.Println("Error encountered trying to send message")
+						w.requeue(msg)
+					} else if resp.StatusCode > 299 {
+						body, err := io.ReadAll(resp.Body)
+						if err != nil {
+							fmt.Println("Error reading body: ", err)
+						}
+						resp.Body.Close()
+
+						fmt.Printf("Error sending discord message: %v\n%v\n", resp.Status, string(body))
+
+						w.requeue(msg)
+					} else {
+						fmt.Println("Successfully sent message")
 					}
-					resp.Body.Close()
-
-					fmt.Printf("Error sending discord message: %v\n%v\n", resp.Status, string(body))
-
-					w.requeue(msg)
-				} else {
-					fmt.Println("Successfully sent message")
 				}
 			}
 		}
@@ -78,25 +80,25 @@ func (w Webhook) Send(msg string) {
 
 type Discord struct {
 	Harbinger Webhook
-	Services  map[config.Service]Webhook
+	Services  map[string]Webhook
 }
 
 func NewDiscord(cfg config.Config) Discord {
-	services := make(map[config.Service]Webhook)
+	services := make(map[string]Webhook)
 
 	for _, service := range cfg.Services {
-		services[service] = NewWebhook(service.Webhook)
+		services[service.ServiceName] = NewWebhook(service.Webhooks)
 	}
 
 	return Discord{
-		Harbinger: NewWebhook(cfg.Harbinger.Webhook),
+		Harbinger: NewWebhook([]string{cfg.Harbinger.Webhook}),
 		Services:  services,
 	}
 }
 
 func (d Discord) SendAsServiceByName(serviceName, msg string) {
 	for service, webhook := range d.Services {
-		if service.ServiceName == serviceName {
+		if service == serviceName {
 			webhook.Send(msg)
 			return
 		}
@@ -106,10 +108,5 @@ func (d Discord) SendAsServiceByName(serviceName, msg string) {
 }
 
 func (d Discord) SendAsService(service config.Service, msg string) {
-	for s, webhook := range d.Services {
-		if s == service {
-			webhook.Send(msg)
-			return
-		}
-	}
+	d.SendAsServiceByName(service.ServiceName, msg)
 }
