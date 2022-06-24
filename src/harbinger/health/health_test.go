@@ -24,7 +24,7 @@ func TestHealthCheck(t *testing.T) {
 	}
 
 	fakeServices := make([]*ServiceStatus, 0)
-	fakeService := config.Service{DisplayName: "test", ServiceName: "test", Endpoint: "test", Webhook: "test"}
+	fakeService := config.Service{DisplayName: "test", ServiceName: "test", Endpoint: "test", Webhooks: []string{"test"}}
 	fakeServices = append(fakeServices, &ServiceStatus{Service: fakeService, Online: true, Alerted: true, ConsecutiveOfflineChecks: 0, OfflineAt: time.Now()})
 	d := DiscordMock{false}
 	health := Checker{fakeServices, &d, checkStatus}
