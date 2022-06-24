@@ -37,7 +37,7 @@ Harbinger is configured by a file you create at `./src/harbinger/config.json`. I
     "serviceName": "my-site",
     "displayName": "My Site",
     "endpoint": "https://example.com/health",
-    "webhook": "a discord webhook url"
+    "webhooks": ["a discord webhook url", "another webhook url if you want to notify multiple channels or servers"]
   }],
   "harbinger": {
     "name": "a name for this instance of harbinger",
