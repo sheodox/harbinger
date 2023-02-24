@@ -5,13 +5,22 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"time"
 )
 
+type ServiceReminder struct {
+	Hours   int `json:"hours"`
+	Minutes int `json:"minutes"`
+	Seconds int `json:"seconds"`
+}
+
 type Service struct {
-	DisplayName string   `json:"displayName"`
-	ServiceName string   `json:"serviceName"`
-	Endpoint    string   `json:"endpoint"`
-	Webhooks    []string `json:"webhooks"`
+	DisplayName  string          `json:"displayName"`
+	ServiceName  string          `json:"serviceName"`
+	Endpoint     string          `json:"endpoint"`
+	Webhooks     []string        `json:"webhooks"`
+	Reminder     ServiceReminder `json:"reminder"`
+	ReminderTime time.Duration
 }
 
 type Harbinger struct {
@@ -49,6 +58,17 @@ func LoadConfig() (Config, error) {
 	}
 
 	validateConfig(config)
+
+	for index, service := range config.Services {
+		service.ReminderTime = time.Hour*time.Duration(service.Reminder.Hours) + time.Minute*time.Duration(service.Reminder.Minutes) + time.Second*time.Duration(service.Reminder.Seconds)
+
+		// need a minimum time
+		if service.ReminderTime <= 0 {
+			service.ReminderTime = time.Hour * 8
+		}
+
+		config.Services[index] = service
+	}
 
 	return config, err
 }

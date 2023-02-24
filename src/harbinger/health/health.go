@@ -21,6 +21,7 @@ type ServiceStatus struct {
 	Alerted                  bool
 	ConsecutiveOfflineChecks int
 	OfflineAt                time.Time
+	LastAlertedAt            time.Time
 }
 
 type Notifier interface {
@@ -56,12 +57,18 @@ func (c *Checker) Check() {
 			service.ConsecutiveOfflineChecks++
 		}
 
-		if !online && service.ConsecutiveOfflineChecks == 1 {
+		isFirstOffline := service.ConsecutiveOfflineChecks == 1
+		// if the time is exactly the reminder time, it should count too, !before is like >=
+		shouldRemindAgain := !time.Now().Before(service.LastAlertedAt.Add(service.Service.ReminderTime))
+		downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
+
+		if !online && isFirstOffline {
 			// we won't alert at the first sign a service is offline, but we want
 			// to know when we first noticed it. if the service is offline and
 			// we go on to alert about it, this lets us show a more accurate downtime
 			service.OfflineAt = time.Now()
 		} else if !online && service.ConsecutiveOfflineChecks == OFFLINE_COUNT_THRESHOLD {
+			service.LastAlertedAt = time.Now()
 			// the service has gone offline since we last checked
 			if err != nil {
 				c.Discord.SendAsService(service.Service, fmt.Sprintf(":red_circle: %v has gone offline (%v)\n`Error: %v`", service.Service.DisplayName, statusCode, err))
@@ -70,11 +77,13 @@ func (c *Checker) Check() {
 			}
 
 			service.Alerted = true
+		} else if !online && shouldRemindAgain {
+			c.Discord.SendAsService(service.Service, fmt.Sprintf(":warning: %v has been offline for %v", service.Service.DisplayName, downtime))
+			service.LastAlertedAt = time.Now()
 		} else if online && !service.Online {
 			// only log if we've actually notified of the service being down
 			if service.Alerted {
 				// the service has recovered
-				downtime := time.Now().Sub(service.OfflineAt).Round(time.Second)
 				c.Discord.SendAsService(service.Service, fmt.Sprintf(":green_circle: %v is back online (down %v)", service.Service.DisplayName, downtime))
 			}
 

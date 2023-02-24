@@ -42,7 +42,7 @@ func startChecker(checker health.Checker, quit chan any) {
 		for {
 			select {
 			case <-ticker.C:
-				checker.Check()
+				go checker.Check()
 			}
 		}
 	}()
